@@ -198,7 +198,7 @@ public class ServerExam extends Application {
 		root.setBottom( btnStartStop );
 		
 		Scene scene = new Scene( root );
-		scene.getStylesheets().add( getClass().getResource( "app.css" ).toString() );
+		scene.getStylesheets().add( getClass().getResource( "../../app.css" ).toString() );
 		primaryStage.setScene( scene );
 		primaryStage.setTitle( "Server" );
 		primaryStage.setOnCloseRequest( event->stopServer() );
