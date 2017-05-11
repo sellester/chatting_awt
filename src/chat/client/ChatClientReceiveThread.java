@@ -21,7 +21,7 @@ public class ChatClientReceiveThread extends Thread {
 				System.out.println( data );
 			}
 		} catch( IOException ex ) {
-			ChatClient.log( "error:" + ex );
+			ChatWindow.log( "error:" + ex );
 		}
 	}
 }
