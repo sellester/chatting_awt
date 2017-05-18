@@ -7,7 +7,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ChatServerProcessThread extends Thread {
@@ -29,20 +28,21 @@ public class ChatServerProcessThread extends Thread {
 		
 		try {
 			//스트림 얻기
-			bufferedReader = new BufferedReader( new InputStreamReader( socket.getInputStream(), StandardCharsets.UTF_8 ) );
-			printWriter = new PrintWriter( new OutputStreamWriter( socket.getOutputStream(), StandardCharsets.UTF_8 ), true );
+			bufferedReader = new BufferedReader( new InputStreamReader( socket.getInputStream(), "utf-8" ) );
+			printWriter = new PrintWriter( new OutputStreamWriter( socket.getOutputStream(), "utf-8" ), true );
+			
 			
 			//리모트 호스트 정보 얻기
-			InetSocketAddress inetSocketAddress = (InetSocketAddress)socket.getRemoteSocketAddress();
-			String remoteHostAddress = inetSocketAddress.getHostName();
-			int remoteHostPort = inetSocketAddress.getPort();
-			ChatServer.log( "연결됨 from " + remoteHostAddress + ":" + remoteHostPort );
+			InetSocketAddress remoteSocketAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
+			String remoteAddress = remoteSocketAddress.getAddress().getHostAddress();
+			int remotePort = remoteSocketAddress.getPort();
+			log( "[서버] 연결됨 " + remoteAddress + ":" + remotePort );
 			
 			//요청처리
 			while( true ) {
 				String request = bufferedReader.readLine();
 				if( request == null ) {
-					ChatServer.log( "클라이언트로 부터 연결 끊김" );
+					log( "클라이언트로 부터 연결 끊김" );
 					doQuit( printWriter );
 					break;
 				}
@@ -56,27 +56,34 @@ public class ChatServerProcessThread extends Thread {
 					doQuit( printWriter );
 					break;
 				} else {
-					ChatServer.log( "에러: 알수 없는 요청명령(" + tokens[0] + ")" );
+					log( "에러: 알수 없는 요청명령(" + tokens[0] + ")" );
 				}
 				
 			}
 			
 		} catch( IOException ex ) {
-			ChatServer.log( "error:" + ex );
+			log( "error:" + ex );
 			// 클라이언트의 비정상 종료 ( 명시적으로 소켓을 닫지 않음 )
 			doQuit( printWriter );
 		} finally {
 			try {
-				//자원정리
-				bufferedReader.close();
-				printWriter.close();
-				if( socket.isClosed() == false ) {
+				if (bufferedReader != null) {
+					bufferedReader.close();
+				}
+				if (printWriter != null) {
+					printWriter.close();
+				}
+				if (socket != null && socket.isClosed() == false) {
 					socket.close();
 				}
-			} catch( IOException ex ) {
-				ChatServer.log( "error:" + ex );
+			} catch (IOException ex) {
+				ex.printStackTrace();
 			}
 		}
+	}
+	
+	private static void log(String log) {
+		System.out.println("[chat-server] " + log);
 	}
 	
 	private void doQuit( PrintWriter printWriter ) {
@@ -104,9 +111,9 @@ public class ChatServerProcessThread extends Thread {
 		//3. Writer Pool 에 저장
 		addPrintWriter( printWriter );
 
-		//4. ack
-		printWriter.println( "join:ok" );
-		printWriter.flush();
+//		//4. ack
+//		printWriter.println( "join:ok" );
+//		printWriter.flush();
 	}
 	
 	private void addPrintWriter( PrintWriter printWriter ) {
@@ -123,14 +130,14 @@ public class ChatServerProcessThread extends Thread {
 	
 	private void broadcast( String data ) {
 		synchronized( listPrintWriters ) {
-		
 			int count = listPrintWriters.size();
 			for( int i = 0; i < count; i++ ) {
 				PrintWriter printWriter = listPrintWriters.get( i );
 				printWriter.println( data );
 				printWriter.flush();
 			}
-
 		}
 	}
 }
+
+

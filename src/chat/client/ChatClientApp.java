@@ -2,8 +2,8 @@ package chat.client;
 import java.util.Scanner;
 
 public class ChatClientApp {
-	private static final String SERVER_ADDRESS = "192.168.56.1";
-	private static final int SERVER_PORT = 9090;
+	private static final String SERVER_ADDRESS = "127.0.1.1";
+	private static final int SERVER_PORT = 5000;
 	
 	public static void main(String[] args) {
 		String name = null;

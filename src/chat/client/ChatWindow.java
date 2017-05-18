@@ -31,6 +31,13 @@ public class ChatWindow implements ActionListener {
 	private TextArea textArea;
 
 	private String nickname;
+	private String ipaddress;
+	private int port;
+	
+	private BufferedReader bufferedReader;
+	private PrintWriter printWriter;
+	
+	private Socket socket;
 	
 	public ChatWindow(String name, String ipaddress, int port) {
 		this.frame = new Frame(name);
@@ -40,9 +47,14 @@ public class ChatWindow implements ActionListener {
 		this.textArea = new TextArea(30, 80);
 		
 		this.nickname = name;
+		this.ipaddress = ipaddress;
+		this.port = port;
+		this.socket = null;
 		
-		Socket socket = null;
-		
+		socketConn();
+	} 	
+	
+	public void socketConn() {
 		try {
 			socket = new Socket();
 			socket.connect( new InetSocketAddress( ipaddress, port ) );
@@ -60,60 +72,60 @@ public class ChatWindow implements ActionListener {
 		}
 		
 		chatClient(socket);
-	}  
+	}
 	
 	public void chatClient( Socket socket ) {
-		
-		BufferedReader bufferedReader = null;
-		PrintWriter printWriter = null;
-
 		try {
 			// 4. reader/ writer 생성
 			bufferedReader = new BufferedReader( new InputStreamReader( socket.getInputStream(), StandardCharsets.UTF_8 ) );
 			printWriter = new PrintWriter( new OutputStreamWriter( socket.getOutputStream(), StandardCharsets.UTF_8 ), true );
 			
 			// 5. join 프로토콜
-//			System.out.print("닉네임>>");
-//			String nickname = scanner.nextLine();
-			System.out.println("11111111111111111111111111");
 			printWriter.println("join:" + nickname);
 			printWriter.flush();
-			bufferedReader.readLine();
-			System.out.println("11111111111111111111111111");	
-			//System.out.println( data );
 			
 			// 6. Thread 시작
-			Thread thread = new Thread() {
+			Thread thread = new Thread( new Runnable() {
 				@Override
 				public void run() {
-					
 					try {
 						while( true ) {
 							String data = bufferedReader.readLine();
-							if( data == null ) {
+							if (data == null || data.equals("qxit")) {
 								break;
 							}
 
 							textArea.append( data );
 						}
-					} catch( IOException ex ) {
-						log( "error:" + ex );
+					} catch( IOException e ) {
+						textArea.append("메세지 수신 에러!!\n");
+						try {
+							socket.close();
+						} catch (IOException ex) {
+							log( "error:" + ex );
+						}
+					} finally {
+						try {
+							if (bufferedReader != null) {
+								bufferedReader.close();
+							}
+							if (printWriter != null) {
+								printWriter.close();
+							}
+							if (socket != null && socket.isClosed() == false) {
+								socket.close();
+							}
+						} catch (IOException ex) {
+							ex.printStackTrace();
+						}
 					}
 				}
-			};
+			});
 			thread.start();
 			
 		} catch (Exception ex) {
 			log("error:" + ex);
-		} finally {
-			//자원정리
-			if( bufferedReader != null ) {
-				bufferedReader.close();
-			}
-			if( printWriter != null ) {
-				printWriter.close();
-			}
-		}
+		} 
 	}
 
 	public static void log(String log) {
@@ -161,21 +173,17 @@ public class ChatWindow implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String message = textField.getText();
-		
-		if ("quit".equals(message) == true) {
-			// 8. quit 프로토콜 처리
-			textArea.append( message );
-			printWriter.println("quit");
+	
+		if (message.equals("exit") == true) {
+			printWriter.println("exit");
 			printWriter.flush();
 			System.exit(0);
 		} else {
-			// 9. 메시지 처리
-			textArea.append( nickname + " : " + message );
-			textArea.append("\n");
-			textField.setText("");
-			textField.requestFocus();
-			printWriter.println( "message:" + message );
+			printWriter.println("message:" + message);
 			printWriter.flush();
 		}
+		
+		textField.setText("");
+		textField.requestFocus();
 	}
 }

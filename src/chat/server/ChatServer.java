@@ -11,7 +11,7 @@ import java.util.List;
 
 public class ChatServer {
 
-	private static final int PORT = 9090;
+	private static final int PORT = 5000;
 	
 	public static void main(String[] args) {
 		ServerSocket serverSocket = null;
@@ -26,7 +26,8 @@ public class ChatServer {
 			InetAddress inetAddress = InetAddress.getLocalHost();
 			String hostAddress = inetAddress.getHostAddress();
 			serverSocket.bind( new InetSocketAddress( hostAddress, PORT ) );
-			log( "bind " + hostAddress + ":" + PORT );
+			log( "bind " + InetAddress.getLocalHost().getHostAddress() + ":" + PORT );
+			
 			
 			//3. 연결 요청 기다림
 			while( true ) {
@@ -48,7 +49,7 @@ public class ChatServer {
 		}
 	}
 	
-	public static void log( String log ) {
-		System.out.println( "[chat-server] " + log );
+	private static void log(String log) {
+		System.out.println("[chat-server] " + log);
 	}
 }
