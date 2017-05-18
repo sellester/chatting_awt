@@ -7,6 +7,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ChatServerProcessThread extends Thread {
@@ -28,15 +30,15 @@ public class ChatServerProcessThread extends Thread {
 		
 		try {
 			//스트림 얻기
-			bufferedReader = new BufferedReader( new InputStreamReader( socket.getInputStream(), "utf-8" ) );
-			printWriter = new PrintWriter( new OutputStreamWriter( socket.getOutputStream(), "utf-8" ), true );
+			bufferedReader = new BufferedReader( new InputStreamReader( socket.getInputStream(), StandardCharsets.UTF_8 ) );
+			printWriter = new PrintWriter( new OutputStreamWriter( socket.getOutputStream(), StandardCharsets.UTF_8 ), true );
 			
 			
 			//리모트 호스트 정보 얻기
 			InetSocketAddress remoteSocketAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
-			String remoteAddress = remoteSocketAddress.getAddress().getHostAddress();
 			int remotePort = remoteSocketAddress.getPort();
-			log( "[서버] 연결됨 " + remoteAddress + ":" + remotePort );
+			String remoteAddress = remoteSocketAddress.getAddress().getHostAddress();
+			log("[서버] 연결됨 " + remoteAddress + ":" + remotePort);
 			
 			//요청처리
 			while( true ) {
@@ -48,23 +50,23 @@ public class ChatServerProcessThread extends Thread {
 				}
 				
 				String[] tokens = request.split( PROTOCOL_DIVIDER );
+				
 				if( "join".equals( tokens[0] ) ) {
 					doJoin( printWriter, tokens[1] );
-				} else if( "message".equals( tokens[0] ) ){
+				} else if( "message".equals( tokens[0] ) ) {
 					doMessage( tokens[1] );
-				} else if( "quit".equals( tokens[0] ) ){
+				} else if( "quit".equals( tokens[0] ) ) {
 					doQuit( printWriter );
 					break;
-				} else {
-					log( "에러: 알수 없는 요청명령(" + tokens[0] + ")" );
 				}
-				
 			}
 			
-		} catch( IOException ex ) {
-			log( "error:" + ex );
+		} catch( SocketException e ) {
+			log( "error:" + e );
 			// 클라이언트의 비정상 종료 ( 명시적으로 소켓을 닫지 않음 )
 			doQuit( printWriter );
+		} catch( IOException e ) {
+			e.printStackTrace();
 		} finally {
 			try {
 				if (bufferedReader != null) {
@@ -76,8 +78,8 @@ public class ChatServerProcessThread extends Thread {
 				if (socket != null && socket.isClosed() == false) {
 					socket.close();
 				}
-			} catch (IOException ex) {
-				ex.printStackTrace();
+			} catch ( IOException e ) {
+				e.printStackTrace();
 			}
 		}
 	}

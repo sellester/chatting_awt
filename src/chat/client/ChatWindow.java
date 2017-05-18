@@ -20,6 +20,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
 public class ChatWindow implements ActionListener {
@@ -31,47 +32,35 @@ public class ChatWindow implements ActionListener {
 	private TextArea textArea;
 
 	private String nickname;
-	private String ipaddress;
-	private int port;
 	
+	private Socket socket;
 	private BufferedReader bufferedReader;
 	private PrintWriter printWriter;
 	
-	private Socket socket;
-	
 	public ChatWindow(String name, String ipaddress, int port) {
-		this.frame = new Frame(name);
-		this.pannel = new Panel();
-		this.buttonSend = new Button("Send");
-		this.textField = new TextField();
-		this.textArea = new TextArea(30, 80);
+		frame = new Frame(name);
+		pannel = new Panel();
+		buttonSend = new Button("Send");
+		textField = new TextField();
+		textArea = new TextArea(30, 80);
 		
-		this.nickname = name;
-		this.ipaddress = ipaddress;
-		this.port = port;
-		this.socket = null;
+		nickname = name;
 		
-		socketConn();
+		socketConn( ipaddress, port );
 	} 	
 	
-	public void socketConn() {
+	private void socketConn( String ipaddress, int port ) {
 		try {
 			socket = new Socket();
 			socket.connect( new InetSocketAddress( ipaddress, port ) );
+			
+			chatClient(socket);
+			
+		} catch( SocketException ex ) {
+			log("error:" + ex);
 		} catch( IOException ex ) {
 			log("error:" + ex);
-		} finally {
-			//자원정리
-			try {
-				if( socket != null && socket.isClosed() == false) {
-					socket.close();
-				}
-			} catch( IOException ex ) {
-				log( "error:" + ex );
-			}
-		}
-		
-		chatClient(socket);
+		} 
 	}
 	
 	public void chatClient( Socket socket ) {
@@ -85,20 +74,21 @@ public class ChatWindow implements ActionListener {
 			printWriter.flush();
 			
 			// 6. Thread 시작
-			Thread thread = new Thread( new Runnable() {
+			Thread chatThread = new Thread( new Runnable() {
 				@Override
 				public void run() {
 					try {
 						while( true ) {
 							String data = bufferedReader.readLine();
-							if (data == null || data.equals("qxit")) {
+							if (data == null || data.equals("quit")) {
 								break;
 							}
 
-							textArea.append( data );
+							textArea.append( data + "\n" );
 						}
 					} catch( IOException e ) {
-						textArea.append("메세지 수신 에러!!\n");
+						textArea.append("메세지 수신 에러!!!!!\n");
+						e.printStackTrace();
 						try {
 							socket.close();
 						} catch (IOException ex) {
@@ -121,7 +111,7 @@ public class ChatWindow implements ActionListener {
 					}
 				}
 			});
-			thread.start();
+			chatThread.start();
 			
 		} catch (Exception ex) {
 			log("error:" + ex);
@@ -174,8 +164,8 @@ public class ChatWindow implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		String message = textField.getText();
 	
-		if (message.equals("exit") == true) {
-			printWriter.println("exit");
+		if (message.equals("quit") == true) {
+			printWriter.println("quit");
 			printWriter.flush();
 			System.exit(0);
 		} else {

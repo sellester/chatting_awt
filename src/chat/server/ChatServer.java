@@ -10,31 +10,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatServer {
-
-	private static final int PORT = 5000;
+	private static final int PORT = 9090;
 	
 	public static void main(String[] args) {
 		ServerSocket serverSocket = null;
 		List<PrintWriter> listPrintWriters = new ArrayList<PrintWriter>();
 		
 		try {
-			
 			//1. 서버소켓 생성
 			serverSocket = new ServerSocket();
 			
 			//2. binding
-			InetAddress inetAddress = InetAddress.getLocalHost();
-			String hostAddress = inetAddress.getHostAddress();
-			serverSocket.bind( new InetSocketAddress( hostAddress, PORT ) );
-			log( "bind " + InetAddress.getLocalHost().getHostAddress() + ":" + PORT );
-			
+			serverSocket.bind(new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), PORT));
+			log("bind " + InetAddress.getLocalHost().getHostAddress() + ":" + PORT);
 			
 			//3. 연결 요청 기다림
 			while( true ) {
 				Socket socket = serverSocket.accept();
 				
-				Thread thread = new ChatServerProcessThread( socket, listPrintWriters );
-				thread.start();
+				Thread chatThread = new ChatServerProcessThread( socket, listPrintWriters );
+				chatThread.start();
 			}
 		} catch( IOException ex ) {
 			log( "error:" + ex );
